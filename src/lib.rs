@@ -5,7 +5,7 @@ use local::DryRun;
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Kube Error: {0}")]
-    KubeError(#[from] kube::Error),
+    KubeError(#[source] kube::Error),
 
     #[error("{0}")]
     OCI(#[from] oci::Error),
@@ -65,6 +65,20 @@ pub enum Error {
 
     #[error("The ConfigMap could not be converted to an AppInstance: {0}")]
     InvalidConfigMap(String),
+}
+
+impl From<kube::Error> for Error {
+    fn from(e: kube::Error) -> Self {
+        match e {
+            kube::Error::Discovery(ref e) => {
+                tracing::error!("discovery api failure (are the CRDs installed?): {e}");
+            }
+            _ => {
+                tracing::error!("kubernetes api or connection error: {e}");
+            }
+        }
+        Self::KubeError(e)
+    }
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

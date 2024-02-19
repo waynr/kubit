@@ -207,10 +207,7 @@ pub async fn run(
         } else {
             Api::<AppInstance>::all(client.clone())
         };
-        if let Err(e) = docs.list(&ListParams::default().limit(1)).await {
-            error!("CRD is not queryable; {e:?}. Is the CRD installed?");
-            std::process::exit(1);
-        }
+        let _ = docs.list(&ListParams::default().limit(1)).await?;
 
         Controller::new(docs, watcher::Config::default().any_semantic())
             .shutdown_on_signal()
